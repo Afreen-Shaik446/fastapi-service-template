@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-service
+  labels:
+    app: fastapi-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fastapi-service
+  template:
+    metadata:
+      labels:
+        app: fastapi-service
+    spec:
+      containers:
+        - name: api
+          image: fastapi-service-template:latest # replace with your registry image
+          ports:
+            - containerPort: 8000
+          env:
+            - name: APP_ENVIRONMENT
+              value: "production"
+            - name: APP_LOG_LEVEL
+              value: "INFO"
+            - name: APP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: fastapi-service-secrets
+                  key: jwt-secret
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
